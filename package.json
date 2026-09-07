@@ -1,0 +1,33 @@
+{
+  "name": "spectrahands",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Turn your hands into the visible spectrum — real-time hand-tracked light synth, 100% in-browser.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "setup:vision": "node scripts/fetch-mediapipe-assets.mjs",
+    "postinstall": "node scripts/fetch-mediapipe-assets.mjs || exit 0"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.14",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.1.6",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  },
+  "engines": { "node": ">=18.17" }
+}
