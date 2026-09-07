@@ -1,0 +1,11 @@
+# .gitignore
+node_modules
+.next
+out
+.vercel
+public/mediapipe
+public/models
+.env
+.env.*
+.DS_Store
+*.tsbuildinfo
