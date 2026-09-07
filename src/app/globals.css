@@ -1,0 +1,23 @@
+/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { color-scheme: dark; }
+body { background: #050508; }
+
+::selection { background: rgba(255, 43, 214, 0.4); }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #050508; }
+::-webkit-scrollbar-thumb { background: #26263a; border-radius: 8px; }
+
+@layer utilities {
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .text-glow { text-shadow: 0 0 18px currentColor; }
+}
