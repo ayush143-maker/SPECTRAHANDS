@@ -16,6 +16,7 @@ export function HandSpectrumStage() {
   const engineRef = useRef<SpectrumEngine | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const noticeTimer = useRef<number>(0);
+  const healthTimer = useRef<number>(0);
   const [hud, setHud] = useState<HudState>(DEFAULT_HUD);
   const [theme, setTheme] = useState('rainbow');
   const [sound, setSound] = useState(false);
@@ -29,10 +30,13 @@ export function HandSpectrumStage() {
     engine.attachVideo(videoRef.current!);
     engineRef.current = engine;
     engine.start();
-    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); engine.stop(); };
+    return () => {
+      window.clearInterval(healthTimer.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      engine.stop();
+    };
   }, []);
 
-  // "no hands found" helper hint after a few seconds of camera + zero hands
   useEffect(() => {
     if (hud.mode === 'camera' && hud.hands === 0) {
       const t = window.setTimeout(() => setHint('No hands in frame — face the camera with both palms visible (good lighting helps).'), 3500);
@@ -44,16 +48,31 @@ export function HandSpectrumStage() {
   const flash = useCallback((msg: string) => {
     setNotice(msg);
     window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => setNotice(''), 4500);
+    noticeTimer.current = window.setTimeout(() => setNotice(''), 5000);
   }, []);
 
   const dropCamera = useCallback((msg?: string) => {
+    window.clearInterval(healthTimer.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     engineRef.current?.setMode('demo');
     setCamState('off');
     if (msg) flash(msg);
   }, [flash]);
+
+  /** Har 500ms track health poll: muted/dead track ya frozen video => fallback. */
+  const startHealthWatch = useCallback((track: MediaStreamTrack) => {
+    window.clearInterval(healthTimer.current);
+    let bad = 0;
+    healthTimer.current = window.setInterval(() => {
+      const v = videoRef.current;
+      const unhealthy = track.readyState !== 'live' || track.muted || (v ? v.readyState < 2 : true);
+      bad = unhealthy ? bad + 1 : 0;
+      if (bad >= 3) {
+        dropCamera('Camera feed mil nahi raha (device busy/muted). Dusre tabs ya apps jo camera use kar rahe hain unhe band karo, phir retry — demo mode engaged.');
+      }
+    }, 500);
+  }, [dropCamera]);
 
   const pickTheme = (id: string) => { setTheme(id); engineRef.current?.setTheme(id); };
   const toggleSound = () => { const next = !sound; setSound(next); engineRef.current?.setSound(next); };
@@ -69,11 +88,10 @@ export function HandSpectrumStage() {
       v.srcObject = stream;
       await v.play();
 
-      // Track health: if the OS / another app steals the webcam, fall back gracefully
-      // instead of rendering Chrome's dead-camera placeholder frame.
       const track = stream.getVideoTracks()[0];
       track.addEventListener('ended', () => dropCamera('Camera stream ended — demo mode engaged.'));
-      track.addEventListener('mute', () => dropCamera('Camera feed lost (device busy or blocked by another app) — demo mode engaged.'));
+      track.addEventListener('mute', () => dropCamera('Camera feed lost (device busy or blocked) — demo mode engaged.'));
+      startHealthWatch(track);
 
       await engineRef.current!.ensureTracker();
       engineRef.current!.setMode('camera');
@@ -82,7 +100,7 @@ export function HandSpectrumStage() {
       const name = (e as DOMException)?.name;
       dropCamera(
         name === 'NotAllowedError'
-          ? 'Camera permission denied — allow it from the address-bar camera icon, or stay in demo mode.'
+          ? 'Camera permission denied — address-bar camera icon se Allow karo, ya demo mode use karo.'
           : name === 'NotFoundError'
             ? 'No camera found on this device — demo mode keeps the photons flowing.'
             : 'Camera unavailable — demo mode keeps the photons flowing.'
