@@ -1,6 +1,6 @@
 // src/components/stage/HandSpectrumStage.tsx
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SpectrumEngine } from '@/lib/engine/SpectrumEngine';
 import { Hud } from './Hud';
 import { ThemeDock } from './ThemeDock';
@@ -15,10 +15,13 @@ export function HandSpectrumStage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const engineRef = useRef<SpectrumEngine | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const noticeTimer = useRef<number>(0);
   const [hud, setHud] = useState<HudState>(DEFAULT_HUD);
   const [theme, setTheme] = useState('rainbow');
   const [sound, setSound] = useState(false);
-  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [camState, setCamState] = useState<'off' | 'starting' | 'live'>('off');
+  const [hint, setHint] = useState('');
   const { toggle } = useFullscreen();
 
   useEffect(() => {
@@ -29,29 +32,62 @@ export function HandSpectrumStage() {
     return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); engine.stop(); };
   }, []);
 
+  // "no hands found" helper hint after a few seconds of camera + zero hands
+  useEffect(() => {
+    if (hud.mode === 'camera' && hud.hands === 0) {
+      const t = window.setTimeout(() => setHint('No hands in frame — face the camera with both palms visible (good lighting helps).'), 3500);
+      return () => window.clearTimeout(t);
+    }
+    setHint('');
+  }, [hud.mode, hud.hands]);
+
+  const flash = useCallback((msg: string) => {
+    setNotice(msg);
+    window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setNotice(''), 4500);
+  }, []);
+
+  const dropCamera = useCallback((msg?: string) => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    engineRef.current?.setMode('demo');
+    setCamState('off');
+    if (msg) flash(msg);
+  }, [flash]);
+
   const pickTheme = (id: string) => { setTheme(id); engineRef.current?.setTheme(id); };
   const toggleSound = () => { const next = !sound; setSound(next); engineRef.current?.setSound(next); };
 
   const enableCamera = async () => {
-    setError('');
+    setNotice(''); setHint(''); setCamState('starting');
     try {
+      if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error('unsupported'), { name: 'NotSupportedError' });
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720, facingMode: 'user' }, audio: false });
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = stream;
       const v = videoRef.current!;
       v.srcObject = stream;
       await v.play();
+
+      // Track health: if the OS / another app steals the webcam, fall back gracefully
+      // instead of rendering Chrome's dead-camera placeholder frame.
+      const track = stream.getVideoTracks()[0];
+      track.addEventListener('ended', () => dropCamera('Camera stream ended — demo mode engaged.'));
+      track.addEventListener('mute', () => dropCamera('Camera feed lost (device busy or blocked by another app) — demo mode engaged.'));
+
       await engineRef.current!.ensureTracker();
       engineRef.current!.setMode('camera');
-    } catch {
-      setError('Camera blocked — demo mode keeps the photons flowing.');
+      setCamState('live');
+    } catch (e) {
+      const name = (e as DOMException)?.name;
+      dropCamera(
+        name === 'NotAllowedError'
+          ? 'Camera permission denied — allow it from the address-bar camera icon, or stay in demo mode.'
+          : name === 'NotFoundError'
+            ? 'No camera found on this device — demo mode keeps the photons flowing.'
+            : 'Camera unavailable — demo mode keeps the photons flowing.'
+      );
     }
-  };
-
-  const disableCamera = () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    engineRef.current?.setMode('demo');
   };
 
   return (
@@ -79,9 +115,21 @@ export function HandSpectrumStage() {
           </div>
         )}
 
+        {camState === 'starting' && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="animate-pulse-glow font-mono text-sm tracking-[0.3em] text-cyan-300">WARMING UP GPU LANDMARKER…</span>
+          </div>
+        )}
+
+        {hint && camState === 'live' && (
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
+            <span className="rounded-full border border-white/10 bg-black/60 px-4 py-2 font-mono text-[11px] text-zinc-300 backdrop-blur">{hint}</span>
+          </div>
+        )}
+
         <div className="absolute right-3 top-3 flex gap-2">
-          <IconBtn label={hud.mode === 'camera' ? 'Switch to demo mode' : 'Enable camera'} onClick={hud.mode === 'camera' ? disableCamera : enableCamera}>
-            {hud.mode === 'camera' ? <CamIcon off /> : <CamIcon />}
+          <IconBtn label={camState === 'live' ? 'Switch to demo mode' : 'Enable camera'} onClick={camState === 'live' ? () => dropCamera('Camera off — demo mode.') : enableCamera}>
+            {camState === 'live' ? <CamIcon off /> : <CamIcon />}
           </IconBtn>
           <IconBtn label={sound ? 'Mute' : 'Enable sound'} onClick={toggleSound}>
             <SoundIcon on={sound} />
@@ -93,9 +141,9 @@ export function HandSpectrumStage() {
 
         <ThemeDock active={theme} onPick={pickTheme} />
 
-        {error && (
-          <div className="absolute bottom-14 left-3 rounded-lg border border-red-400/30 bg-red-950/70 px-3 py-1.5 font-mono text-[11px] text-red-200 backdrop-blur">
-            {error}
+        {notice && (
+          <div className="absolute bottom-14 left-3 max-w-[80%] rounded-lg border border-red-400/30 bg-red-950/70 px-3 py-1.5 font-mono text-[11px] text-red-200 backdrop-blur">
+            {notice}
           </div>
         )}
       </div>
