@@ -26,5 +26,7 @@ export function HowItWorks() {
 }
 
 export const Kicker = ({ children }: { children: React.ReactNode }) => (
-  <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-cyan-400">// {children}</span>
+  <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-cyan-400">
+    {'// '}{children}
+  </span>
 );
