@@ -64,11 +64,15 @@ export function HandSpectrumStage() {
   const startHealthWatch = useCallback((track: MediaStreamTrack) => {
     window.clearInterval(healthTimer.current);
     let bad = 0;
+    const startedAt = performance.now();
     healthTimer.current = window.setInterval(() => {
+      // Grace period: decoders (esp. after a delayed/off-screen <video>) can take a
+      // moment to report readyState >= 2. Don't fail the stream out from under it.
+      if (performance.now() - startedAt < 2500) return;
       const v = videoRef.current;
       const unhealthy = track.readyState !== 'live' || track.muted || (v ? v.readyState < 2 : true);
       bad = unhealthy ? bad + 1 : 0;
-      if (bad >= 3) {
+      if (bad >= 4) {
         dropCamera('Camera feed mil nahi raha (device busy/muted). Dusre tabs ya apps jo camera use kar rahe hain unhe band karo, phir retry — demo mode engaged.');
       }
     }, 500);
@@ -115,7 +119,13 @@ export function HandSpectrumStage() {
         className="group relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-stage"
       >
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-        <video ref={videoRef} playsInline muted className="hidden" />
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          aria-hidden="true"
+          className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0"
+        />
 
         {/* corner brackets */}
         <span className="pointer-events-none absolute left-2 top-2 h-5 w-5 border-l-2 border-t-2 border-fuchsia-400/70" />
