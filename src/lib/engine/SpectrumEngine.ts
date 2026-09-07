@@ -80,6 +80,12 @@ export class SpectrumEngine {
     o.start(t0); o.stop(t0 + 0.65);
   }
 
+  /** Crash-proof detection: kabhi bhi throw nahi karega, loop hamesha zinda rahega. */
+  private safeDetect(): Pt[][] {
+    if (!this.trackerReady || !this.video) return [];
+    try { return this.tracker.detect(this.video, performance.now()); } catch { return []; }
+  }
+
   private loop = (ts: number) => {
     this.raf = requestAnimationFrame(this.loop);
     const dtRaw = (ts - this.last) / 1000;
@@ -105,9 +111,7 @@ export class SpectrumEngine {
   }
 
   private step(dt: number) {
-    const raw: Pt[][] = this.mode === 'camera'
-      ? (this.trackerReady && this.video ? this.tracker.detect(this.video, performance.now()) : [])
-      : syntheticHands(this.t);
+    const raw: Pt[][] = this.mode === 'camera' ? this.safeDetect() : syntheticHands(this.t);
     const hands = raw.map((h) => h.map((p) => ({ x: 1 - p.x, y: p.y }))); // mirror
     this.metrics = hands.map(handMetrics);
     const aspect = this.w / this.h || 1.78;
@@ -157,7 +161,11 @@ export class SpectrumEngine {
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, w, h);
 
-    const videoLive = this.mode === 'camera' && this.video && this.video.readyState >= 2;
+    // Dead / muted / ended camera track => placeholder frame mat draw karo, gradient use karo.
+    const track = (this.video?.srcObject as MediaStream | null)?.getVideoTracks()[0];
+    const videoLive = this.mode === 'camera' && this.video && this.video.readyState >= 2
+      && !!track && track.readyState === 'live' && !track.muted;
+
     if (!videoLive) {
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, this.theme.bg[0]); g.addColorStop(1, this.theme.bg[1]);
