@@ -1,4 +1,3 @@
-// src/lib/vision/handTracker.ts
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
 import type { Pt } from './types';
 
@@ -17,14 +16,22 @@ export class HandTracker {
     const wasm = (await exists('/mediapipe/wasm/vision_wasm_internal.js')) ? '/mediapipe/wasm' : `${CDN}/wasm`;
     const model = (await exists('/models/hand_landmarker.task')) ? '/models/hand_landmarker.task' : MODEL_CDN;
     const vision = await FilesetResolver.forVisionTasks(wasm);
-    this.lm = await HandLandmarker.createFromOptions(vision, {
-      baseOptions: { modelAssetPath: model, delegate: 'GPU' },
-      runningMode: 'VIDEO',
+
+    const opts = (delegate: 'GPU' | 'CPU') => ({
+      baseOptions: { modelAssetPath: model, delegate },
+      runningMode: 'VIDEO' as const,
       numHands: 2,
       minHandDetectionConfidence: 0.5,
       minHandPresenceConfidence: 0.5,
       minTrackingConfidence: 0.5,
     });
+
+    try {
+      this.lm = await HandLandmarker.createFromOptions(vision, opts('GPU'));
+    } catch {
+      // GPU delegate unsupported/blocked => CPU pe fallback
+      this.lm = await HandLandmarker.createFromOptions(vision, opts('CPU'));
+    }
   }
 
   detect(video: HTMLVideoElement, tsMs: number): Pt[][] {
