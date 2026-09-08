@@ -11,7 +11,6 @@ body { background: #0d0d13; }
 ::-webkit-scrollbar-thumb { background: #262633; border-radius: 8px; border: 3px solid #0d0d13; }
 
 @layer utilities {
-  /* Claymorphism recipe: matte surface + inner top light + deep soft shadow */
   .clay {
     @apply rounded-4xl border border-white/5 bg-clay shadow-clay;
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, 0.18));
@@ -25,7 +24,8 @@ body { background: #0d0d13; }
   }
   .grain::after {
     content: '';
-    @apply pointer-events-none absolute inset-0 rounded-inherit opacity-[0.05] mix-blend-overlay;
+    @apply pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay;
+    border-radius: inherit;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   .grid-bg {
