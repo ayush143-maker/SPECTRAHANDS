@@ -37,7 +37,6 @@ export function HandSpectrumStage() {
     };
   }, []);
 
-  // Smart hints: shutter > second-hand missing > no hands
   useEffect(() => {
     if (hud.mode !== 'camera') { setHint(''); return; }
     if (hud.dark) {
@@ -134,12 +133,6 @@ export function HandSpectrumStage() {
         >
           <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
           <video ref={videoRef} playsInline muted className="pointer-events-none absolute inset-0 h-full w-full opacity-0" />
-
-          {/* pastel corner brackets */}
-          <span className="pointer-events-none absolute left-2 top-2 h-5 w-5 border-l-2 border-t-2 border-lavender/70" />
-          <span className="pointer-events-none absolute right-2 top-2 h-5 w-5 border-r-2 border-t-2 border-mint/70" />
-          <span className="pointer-events-none absolute bottom-2 left-2 h-5 w-5 border-b-2 border-l-2 border-mint/70" />
-          <span className="pointer-events-none absolute bottom-2 right-2 h-5 w-5 border-b-2 border-r-2 border-lavender/70" />
 
           <Hud hud={hud} />
 
