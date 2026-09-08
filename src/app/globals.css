@@ -1,23 +1,39 @@
-/* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html { color-scheme: dark; }
-body { background: #050508; }
+body { background: #0d0d13; }
 
-::selection { background: rgba(255, 43, 214, 0.4); }
-
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #050508; }
-::-webkit-scrollbar-thumb { background: #26263a; border-radius: 8px; }
+::selection { background: rgba(207, 196, 255, 0.35); color: #fff; }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: #0d0d13; }
+::-webkit-scrollbar-thumb { background: #262633; border-radius: 8px; border: 3px solid #0d0d13; }
 
 @layer utilities {
+  /* Claymorphism recipe: matte surface + inner top light + deep soft shadow */
+  .clay {
+    @apply rounded-4xl border border-white/5 bg-clay shadow-clay;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, 0.18));
+  }
+  .clay-sm {
+    @apply rounded-3xl border border-white/5 bg-clay shadow-clay-sm;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 45%);
+  }
+  .sticker {
+    @apply inline-block rounded-xl border-2 border-ink px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-widest text-ink shadow-sticker;
+  }
+  .grain::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 rounded-inherit opacity-[0.05] mix-blend-overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
   .grid-bg {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     background-size: 44px 44px;
   }
+  .text-outline { -webkit-text-stroke: 1px rgba(255, 255, 255, 0.22); color: transparent; }
   .text-glow { text-shadow: 0 0 18px currentColor; }
 }
