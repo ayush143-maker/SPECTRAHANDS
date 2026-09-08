@@ -210,11 +210,11 @@ export class SpectrumEngine {
     this.particles.draw(ctx);
 
     const color = this.theme.colorAt(this.pct, this.nm);
-    for (const m of this.metrics) drawSkeleton(ctx, m.pts, color, w, h, this.t);
+    for (const m of this.metrics) drawSkeleton(ctx, m.pts, color, w, h);
     if (this.metrics.length >= 2) {
       const [a, b] = this.metrics;
-      drawBeams(ctx, a.pts, b.pts, color, w, h, this.t);
-      drawChip(ctx, ((a.centroid.x + b.centroid.x) / 2) * w, ((a.centroid.y + b.centroid.y) / 2) * h, Math.round(this.nm), color, this.t);
+      drawBeams(ctx, a.pts, b.pts, color, w, h);
+      drawChip(ctx, ((a.centroid.x + b.centroid.x) / 2) * w, ((a.centroid.y + b.centroid.y) / 2) * h, Math.round(this.nm), color);
     }
 
     if (this.shock >= 0) {
@@ -222,16 +222,13 @@ export class SpectrumEngine {
       const a = 1 - k;
       const r = easeOut(k) * Math.max(w, h) * 0.7;
       ctx.globalCompositeOperation = 'lighter';
-      ctx.lineWidth = 3 + a * 5;
-      // chromatic double ring
-      ctx.strokeStyle = `rgba(255,90,90,${a * 0.55})`;
+      ctx.lineWidth = 2 + a * 3;
+      ctx.strokeStyle = `rgba(255,90,90,${a * 0.5})`;
       ctx.beginPath(); ctx.arc(this.ex - 6 * a, this.ey, r * 1.05, 0, TAU); ctx.stroke();
-      ctx.strokeStyle = `rgba(90,200,255,${a * 0.55})`;
+      ctx.strokeStyle = `rgba(90,200,255,${a * 0.5})`;
       ctx.beginPath(); ctx.arc(this.ex + 6 * a, this.ey, r * 0.95, 0, TAU); ctx.stroke();
-      // white core ring
       ctx.strokeStyle = `rgba(255,255,255,${a * 0.9})`;
       ctx.beginPath(); ctx.arc(this.ex, this.ey, r, 0, TAU); ctx.stroke();
-      // spectrum inner ring
       ctx.strokeStyle = cssSafe(color, a * 0.6);
       ctx.beginPath(); ctx.arc(this.ex, this.ey, r * 0.72, 0, TAU); ctx.stroke();
       ctx.globalCompositeOperation = 'source-over';
