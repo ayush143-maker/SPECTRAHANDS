@@ -8,5 +8,5 @@ export type HandMetrics = {
 export type HudState = {
   hands: number; fps: number; gesture: Gesture | '—';
   spreadPct: number; nm: number; distPct: number;
-  merge: boolean; mode: 'demo' | 'camera';
+  merge: boolean; mode: 'demo' | 'camera'; dark: boolean;
 };
