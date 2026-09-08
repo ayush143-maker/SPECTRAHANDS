@@ -7,7 +7,7 @@ import { ThemeDock } from './ThemeDock';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import type { HudState } from '@/lib/vision/types';
 
-const DEFAULT_HUD: HudState = { hands: 2, fps: 60, gesture: 'Open Hand', spreadPct: 62, nm: 540, distPct: 40, merge: false, mode: 'demo' };
+const DEFAULT_HUD: HudState = { hands: 2, fps: 60, gesture: 'Open Hand', spreadPct: 62, nm: 540, distPct: 40, merge: false, mode: 'demo', dark: false };
 
 export function HandSpectrumStage() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -37,13 +37,23 @@ export function HandSpectrumStage() {
     };
   }, []);
 
+  // Smart hints: shutter > second-hand missing > no hands
   useEffect(() => {
-    if (hud.mode === 'camera' && hud.hands === 0) {
+    if (hud.mode !== 'camera') { setHint(''); return; }
+    if (hud.dark) {
+      setHint('Feed pitch-black — physical privacy shutter or lens cover closed? (bezel slider / Fn key)');
+      return;
+    }
+    if (hud.hands === 1) {
+      const t = window.setTimeout(() => setHint('Second hand missing — both palms flat & fully in frame rakho, hands overlap mat karo.'), 2500);
+      return () => window.clearTimeout(t);
+    }
+    if (hud.hands === 0) {
       const t = window.setTimeout(() => setHint('No hands in frame — face the camera with both palms visible (good lighting helps).'), 3500);
       return () => window.clearTimeout(t);
     }
     setHint('');
-  }, [hud.mode, hud.hands]);
+  }, [hud.mode, hud.hands, hud.dark]);
 
   const flash = useCallback((msg: string) => {
     setNotice(msg);
@@ -60,20 +70,17 @@ export function HandSpectrumStage() {
     if (msg) flash(msg);
   }, [flash]);
 
-  /** Har 500ms track health poll: muted/dead track ya frozen video => fallback. */
   const startHealthWatch = useCallback((track: MediaStreamTrack) => {
     window.clearInterval(healthTimer.current);
-    let bad = 0;
     const startedAt = performance.now();
+    let bad = 0;
     healthTimer.current = window.setInterval(() => {
-      // Grace period: decoders (esp. after a delayed/off-screen <video>) can take a
-      // moment to report readyState >= 2. Don't fail the stream out from under it.
       if (performance.now() - startedAt < 2500) return;
       const v = videoRef.current;
       const unhealthy = track.readyState !== 'live' || track.muted || (v ? v.readyState < 2 : true);
       bad = unhealthy ? bad + 1 : 0;
       if (bad >= 4) {
-        dropCamera('Camera feed mil nahi raha (device busy/muted). Dusre tabs ya apps jo camera use kar rahe hain unhe band karo, phir retry — demo mode engaged.');
+        dropCamera('Camera feed mil nahi raha (device busy/muted). Dusre tabs/apps jo camera use kar rahe hain band karo, phir retry — demo mode engaged.');
       }
     }, 500);
   }, [dropCamera]);
@@ -97,7 +104,10 @@ export function HandSpectrumStage() {
       track.addEventListener('mute', () => dropCamera('Camera feed lost (device busy or blocked) — demo mode engaged.'));
       startHealthWatch(track);
 
-      await engineRef.current!.ensureTracker();
+      await Promise.race([
+        engineRef.current!.ensureTracker(),
+        new Promise((_, rej) => window.setTimeout(() => rej(Object.assign(new Error('timeout'), { name: 'TimeoutError' })), 20000)),
+      ]);
       engineRef.current!.setMode('camera');
       setCamState('live');
     } catch (e) {
@@ -107,73 +117,76 @@ export function HandSpectrumStage() {
           ? 'Camera permission denied — address-bar camera icon se Allow karo, ya demo mode use karo.'
           : name === 'NotFoundError'
             ? 'No camera found on this device — demo mode keeps the photons flowing.'
-            : 'Camera unavailable — demo mode keeps the photons flowing.'
+            : name === 'TimeoutError'
+              ? 'Hand-tracking model load timeout (network blocked?) — demo mode engaged. Retry on a better network.'
+              : 'Camera unavailable — demo mode keeps the photons flowing.'
       );
     }
   };
 
   return (
     <div id="lab" className="relative">
-      <div
-        ref={wrapRef}
-        className="group relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-stage"
-      >
-        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          aria-hidden="true"
-          className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0"
-        />
+      {/* clay bezel around the screen */}
+      <div className="clay grain relative p-3 sm:p-4">
+        <div
+          ref={wrapRef}
+          className="group relative aspect-video w-full overflow-hidden rounded-4xl border border-white/5 bg-black shadow-clay-lg"
+        >
+          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+          <video ref={videoRef} playsInline muted className="pointer-events-none absolute inset-0 h-full w-full opacity-0" />
 
-        {/* corner brackets */}
-        <span className="pointer-events-none absolute left-2 top-2 h-5 w-5 border-l-2 border-t-2 border-fuchsia-400/70" />
-        <span className="pointer-events-none absolute right-2 top-2 h-5 w-5 border-r-2 border-t-2 border-cyan-400/70" />
-        <span className="pointer-events-none absolute bottom-2 left-2 h-5 w-5 border-b-2 border-l-2 border-cyan-400/70" />
-        <span className="pointer-events-none absolute bottom-2 right-2 h-5 w-5 border-b-2 border-r-2 border-fuchsia-400/70" />
+          {/* pastel corner brackets */}
+          <span className="pointer-events-none absolute left-2 top-2 h-5 w-5 border-l-2 border-t-2 border-lavender/70" />
+          <span className="pointer-events-none absolute right-2 top-2 h-5 w-5 border-r-2 border-t-2 border-mint/70" />
+          <span className="pointer-events-none absolute bottom-2 left-2 h-5 w-5 border-b-2 border-l-2 border-mint/70" />
+          <span className="pointer-events-none absolute bottom-2 right-2 h-5 w-5 border-b-2 border-r-2 border-lavender/70" />
 
-        <Hud hud={hud} />
+          <Hud hud={hud} />
 
-        {hud.merge && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="font-mono text-2xl font-black tracking-[0.3em] text-white drop-shadow-[0_0_24px_#fff]">
-              Σλ → WHITE
-            </span>
+          {hud.merge && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="font-mono text-2xl font-black tracking-[0.3em] text-white drop-shadow-[0_0_24px_#fff]">
+                Σλ → WHITE
+              </span>
+            </div>
+          )}
+
+          {camState === 'starting' && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="clay-sm animate-pulse-glow px-6 py-3 font-mono text-sm tracking-[0.3em] text-lavender">
+                WARMING UP GPU LANDMARKER…
+              </span>
+            </div>
+          )}
+
+          {hint && camState === 'live' && (
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
+              <span className="rounded-full border border-white/5 bg-clay/95 px-4 py-2 font-mono text-[11px] text-sky shadow-clay-sm">
+                {hint}
+              </span>
+            </div>
+          )}
+
+          <div className="absolute right-3 top-3 flex gap-2">
+            <IconBtn label={camState === 'live' ? 'Switch to demo mode' : 'Enable camera'} onClick={camState === 'live' ? () => dropCamera('Camera off — demo mode.') : enableCamera}>
+              {camState === 'live' ? <CamIcon off /> : <CamIcon />}
+            </IconBtn>
+            <IconBtn label={sound ? 'Mute' : 'Enable sound'} onClick={toggleSound}>
+              <SoundIcon on={sound} />
+            </IconBtn>
+            <IconBtn label="Fullscreen" onClick={() => toggle(wrapRef.current)}>
+              <ExpandIcon />
+            </IconBtn>
           </div>
-        )}
 
-        {camState === 'starting' && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="animate-pulse-glow font-mono text-sm tracking-[0.3em] text-cyan-300">WARMING UP GPU LANDMARKER…</span>
-          </div>
-        )}
+          <ThemeDock active={theme} onPick={pickTheme} />
 
-        {hint && camState === 'live' && (
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
-            <span className="rounded-full border border-white/10 bg-black/60 px-4 py-2 font-mono text-[11px] text-zinc-300 backdrop-blur">{hint}</span>
-          </div>
-        )}
-
-        <div className="absolute right-3 top-3 flex gap-2">
-          <IconBtn label={camState === 'live' ? 'Switch to demo mode' : 'Enable camera'} onClick={camState === 'live' ? () => dropCamera('Camera off — demo mode.') : enableCamera}>
-            {camState === 'live' ? <CamIcon off /> : <CamIcon />}
-          </IconBtn>
-          <IconBtn label={sound ? 'Mute' : 'Enable sound'} onClick={toggleSound}>
-            <SoundIcon on={sound} />
-          </IconBtn>
-          <IconBtn label="Fullscreen" onClick={() => toggle(wrapRef.current)}>
-            <ExpandIcon />
-          </IconBtn>
+          {notice && (
+            <div className="absolute bottom-14 left-3 max-w-[80%] rounded-2xl border border-white/5 bg-clay/95 px-3 py-1.5 font-mono text-[11px] text-peach shadow-clay-sm">
+              {notice}
+            </div>
+          )}
         </div>
-
-        <ThemeDock active={theme} onPick={pickTheme} />
-
-        {notice && (
-          <div className="absolute bottom-14 left-3 max-w-[80%] rounded-lg border border-red-400/30 bg-red-950/70 px-3 py-1.5 font-mono text-[11px] text-red-200 backdrop-blur">
-            {notice}
-          </div>
-        )}
       </div>
       <p className="mt-3 text-center font-mono text-[11px] text-zinc-500">
         palms apart = red · palms together = violet · touch = white-light supernova · FIST = gravity well · OPEN HAND = photon wind
@@ -188,7 +201,7 @@ function IconBtn({ children, label, onClick }: { children: React.ReactNode; labe
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="rounded-lg border border-white/10 bg-black/50 p-2 text-zinc-300 backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
+      className="rounded-2xl border border-white/5 bg-clay p-2.5 text-zinc-300 shadow-clay-sm transition hover:-translate-y-0.5 hover:text-white active:scale-95"
     >
       {children}
     </button>
