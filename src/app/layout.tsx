@@ -1,6 +1,10 @@
-// src/app/layout.tsx
 import type { Metadata } from 'next';
+import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+
+// Build-time self-hosted (next/font) → runtime me zero external requests
+const display = Space_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
+const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'SPECTRAHANDS — your hands are the visible spectrum',
@@ -11,7 +15,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="bg-void font-display text-zinc-100 antialiased">{children}</body>
+      <body className={`${display.variable} ${mono.variable} bg-ink font-display text-zinc-100 antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }
