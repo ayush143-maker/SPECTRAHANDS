@@ -7,6 +7,7 @@ import { THEMES, type Theme } from '@/lib/color/themes';
 import type { HandMetrics, HudState, Pt } from '@/lib/vision/types';
 
 type Mode = 'demo' | 'camera';
+const TAU = Math.PI * 2;
 const easeOut = (k: number) => 1 - (1 - k) * (1 - k);
 
 export class SpectrumEngine {
@@ -25,6 +26,8 @@ export class SpectrumEngine {
   private ex = 0; private ey = 0;
   private merge = false;
   private metrics: HandMetrics[] = [];
+  private darkCanvas: HTMLCanvasElement | null = null;
+  private darkAcc = 0; private darkTime = 0; private dark = false;
   private soundOn = false;
   private ac: AudioContext | null = null;
   private osc: OscillatorNode | null = null;
@@ -80,10 +83,31 @@ export class SpectrumEngine {
     o.start(t0); o.stop(t0 + 0.65);
   }
 
-  /** Crash-proof detection: kabhi bhi throw nahi karega, loop hamesha zinda rahega. */
   private safeDetect(): Pt[][] {
     if (!this.trackerReady || !this.video) return [];
     try { return this.tracker.detect(this.video, performance.now()); } catch { return []; }
+  }
+
+  private sampleLuma(dt: number) {
+    const v = this.video;
+    if (!v || v.readyState < 2) { this.darkTime = 0; this.dark = false; return; }
+    this.darkAcc += dt;
+    if (this.darkAcc < 0.5) return;
+    this.darkAcc = 0;
+    if (!this.darkCanvas) {
+      this.darkCanvas = document.createElement('canvas');
+      this.darkCanvas.width = 24; this.darkCanvas.height = 14;
+    }
+    const c = this.darkCanvas.getContext('2d', { willReadFrequently: true });
+    if (!c) return;
+    c.drawImage(v, 0, 0, 24, 14);
+    let data: Uint8ClampedArray;
+    try { data = c.getImageData(0, 0, 24, 14).data; } catch { return; }
+    let sum = 0;
+    for (let i = 0; i < data.length; i += 4) sum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+    const luma = sum / (data.length / 4);
+    this.darkTime = luma < 10 ? this.darkTime + 0.5 : 0;
+    this.dark = this.darkTime >= 2.5;
   }
 
   private loop = (ts: number) => {
@@ -116,18 +140,21 @@ export class SpectrumEngine {
     this.metrics = hands.map(handMetrics);
     const aspect = this.w / this.h || 1.78;
 
+    if (this.mode === 'camera') this.sampleLuma(dt);
+    else { this.dark = false; this.darkTime = 0; }
+
     if (this.metrics.length >= 2) {
       const [a, b] = this.metrics;
       const d = aspectDist(a.centroid, b.centroid, aspect);
       const target = Math.min(1, Math.max(0, (d - 0.10) / 0.62));
-      this.pct += (target - this.pct) * (1 - Math.exp(-8 * dt));   // damped λ
+      this.pct += (target - this.pct) * (1 - Math.exp(-8 * dt));
       this.nm = 380 + this.pct * 320;
       this.cooldown -= dt;
       if (d < 0.09 && this.cooldown <= 0) {
         this.ex = ((a.centroid.x + b.centroid.x) / 2) * this.w;
         this.ey = ((a.centroid.y + b.centroid.y) / 2) * this.h;
         this.flash = 1; this.shock = 0;
-        this.particles.burst(this.ex, this.ey, 240);
+        this.particles.burst(this.ex, this.ey, 300);
         this.ping();
         this.cooldown = 1.4;
       }
@@ -161,7 +188,6 @@ export class SpectrumEngine {
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, w, h);
 
-    // Dead / muted / ended camera track => placeholder frame mat draw karo, gradient use karo.
     const track = (this.video?.srcObject as MediaStream | null)?.getVideoTracks()[0];
     const videoLive = this.mode === 'camera' && this.video && this.video.readyState >= 2
       && !!track && track.readyState === 'live' && !track.muted;
@@ -184,22 +210,30 @@ export class SpectrumEngine {
     this.particles.draw(ctx);
 
     const color = this.theme.colorAt(this.pct, this.nm);
-    for (const m of this.metrics) drawSkeleton(ctx, m.pts, color, w, h);
+    for (const m of this.metrics) drawSkeleton(ctx, m.pts, color, w, h, this.t);
     if (this.metrics.length >= 2) {
       const [a, b] = this.metrics;
-      drawBeams(ctx, a.pts, b.pts, color, w, h);
-      drawChip(ctx, ((a.centroid.x + b.centroid.x) / 2) * w, ((a.centroid.y + b.centroid.y) / 2) * h, Math.round(this.nm), color);
+      drawBeams(ctx, a.pts, b.pts, color, w, h, this.t);
+      drawChip(ctx, ((a.centroid.x + b.centroid.x) / 2) * w, ((a.centroid.y + b.centroid.y) / 2) * h, Math.round(this.nm), color, this.t);
     }
 
     if (this.shock >= 0) {
       const k = this.shock / 0.8;
+      const a = 1 - k;
       const r = easeOut(k) * Math.max(w, h) * 0.7;
       ctx.globalCompositeOperation = 'lighter';
-      ctx.strokeStyle = `rgba(255,255,255,${(1 - k) * 0.9})`;
-      ctx.lineWidth = 3 + (1 - k) * 5;
-      ctx.beginPath(); ctx.arc(this.ex, this.ey, r, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = cssSafe(color, (1 - k) * 0.6);
-      ctx.beginPath(); ctx.arc(this.ex, this.ey, r * 0.72, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 3 + a * 5;
+      // chromatic double ring
+      ctx.strokeStyle = `rgba(255,90,90,${a * 0.55})`;
+      ctx.beginPath(); ctx.arc(this.ex - 6 * a, this.ey, r * 1.05, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = `rgba(90,200,255,${a * 0.55})`;
+      ctx.beginPath(); ctx.arc(this.ex + 6 * a, this.ey, r * 0.95, 0, TAU); ctx.stroke();
+      // white core ring
+      ctx.strokeStyle = `rgba(255,255,255,${a * 0.9})`;
+      ctx.beginPath(); ctx.arc(this.ex, this.ey, r, 0, TAU); ctx.stroke();
+      // spectrum inner ring
+      ctx.strokeStyle = cssSafe(color, a * 0.6);
+      ctx.beginPath(); ctx.arc(this.ex, this.ey, r * 0.72, 0, TAU); ctx.stroke();
       ctx.globalCompositeOperation = 'source-over';
     }
     if (this.flash > 0) {
@@ -220,6 +254,7 @@ export class SpectrumEngine {
       distPct: Math.round(this.pct * 100),
       merge: this.merge,
       mode: this.mode,
+      dark: this.dark,
     };
   }
 }
