@@ -9,3 +9,11 @@ Install dependencies with npm install, then start the development server with np
 ## Permissions
 
 Allow camera access in the browser when using hand-tracking features.
+
+## Working with the project
+
+Use the existing files as the source of truth for the current feature set. Before changing the project structure, check the modules and scripts it already uses.
+
+## Verification
+
+Test the main interaction after edits, run any available build or validation script, and check the result in the browser or target device. Document new setup requirements alongside the relevant example configuration.
