@@ -27,3 +27,7 @@ If vision assets are missing, run `npm run setup:vision` and review the setup sc
 ## Development checks
 
 The package provides `npm run typecheck` and `npm run lint`. Run these after making changes, and check that camera access, model loading, and visual feedback continue to work together.
+
+## Personalizing the interface
+
+Begin in `src/` to locate the existing interface and visual styling. Review `tailwind.config.ts` before changing project-wide theme settings, and follow the conventions already used in the source rather than assuming particular theme tokens. The `scripts/` directory contains setup material for vision assets; keep those setup files and their asset paths in mind when editing or relocating them. The supplied file list does not name an image or font directory, so check existing references in the source before adding or moving assets. After appearance changes, verify both the visual feedback and the camera/model interaction.
