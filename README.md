@@ -41,3 +41,14 @@ These are actions to perform after a change, not verified results:
 - Try the camera interaction after changes to the interface, setup material, or visual feedback. If it does not start, check browser camera permission and asset availability; do not treat this checklist as confirmation that either is working.
 - Inspect the interface at narrow mobile-sized and wide desktop-sized viewports. Check that the visual feedback and any visible controls remain in view and usable while the camera interaction is being reviewed.
 - If you changed appearance or theme settings, inspect the affected interface at both viewport sizes and compare it with the existing conventions in `src/` and `tailwind.config.ts`.
+
+## Accessibility review checklist
+
+These are future checks to perform after a change; they are not claims that the app has been tested or found accessible:
+
+- Use the keyboard to reach and operate every visible interface control, including any camera-related controls. Check that the interaction can be started, stopped, or otherwise managed without requiring hand gestures alone, where the interface provides those actions.
+- Check that keyboard focus is clearly visible on controls and is not lost when camera access is requested, vision assets load, or the visual feedback updates.
+- Review accessible names and instructions for controls, including any camera permission or status messaging. Check that changing visual output does not leave assistive-technology users without meaningful feedback.
+- Review text, control, and focus-indicator contrast against the page and visual output. Since the experience is colour-focused, check whether important states or feedback can be understood without colour perception alone.
+- If imagery or other visual content is added, check that informative content has appropriate text alternatives. Consider whether the hand-tracking interaction has an understandable alternative for people who cannot use the camera or hand gestures; do not assume one is already provided.
+- If the visual feedback moves or pulses, check whether motion can be reduced or paused and whether the experience remains understandable with reduced motion requested.
