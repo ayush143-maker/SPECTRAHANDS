@@ -37,10 +37,19 @@ Begin in `src/` to locate the existing interface and visual styling. Review `tai
 These are actions to perform after a change, not verified results:
 
 - Open the app at the local URL. If testing hand tracking, allow camera access in a browser that supports the required camera APIs, then move a hand in view of the camera and observe the visual feedback.
-- Check the vision setup script under `scripts/` and the asset references it uses. Verify that required model or other media paths point to the expected files; if assets are absent, follow the documented setup instructions rather than assuming they are present.
 - Try the camera interaction after changes to the interface, setup material, or visual feedback. If it does not start, check browser camera permission and asset availability; do not treat this checklist as confirmation that either is working.
 - Inspect the interface at narrow mobile-sized and wide desktop-sized viewports. Check that the visual feedback and any visible controls remain in view and usable while the camera interaction is being reviewed.
 - If you changed appearance or theme settings, inspect the affected interface at both viewport sizes and compare it with the existing conventions in `src/` and `tailwind.config.ts`.
+
+## Asset and loading review checklist
+
+These are review steps, not measured performance results or claims that assets have been checked:
+
+- Inspect the setup script under `scripts/` and the relevant references in `src/` to identify the required MediaPipe model and other local asset paths. Check that referenced files exist where the setup and application expect them; do not assume setup has been run or assets are present.
+- Review the size of downloaded or bundled vision assets and any referenced images or fonts. Consider whether large assets are necessary for the hand-tracking experience and whether the setup instructions still describe how to obtain them. No asset sizes or loading performance have been measured here.
+- Check whether local image, font, and other media files are still referenced before removing them. If moving or renaming an asset, update both the relevant setup material and application references as needed.
+- Inspect the source and package configuration for external font, script, and vision-resource dependencies. Confirm each is intentional and document any required setup or fallback behavior; do not infer dependency details beyond what the repository declares.
+- After asset or dependency changes, review model loading and the visual interaction in a browser with camera access permitted. Also consider what the interface communicates if a required resource fails to load or camera access is unavailable.
 
 ## Accessibility review checklist
 
