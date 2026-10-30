@@ -30,4 +30,14 @@ The package provides `npm run typecheck` and `npm run lint`. Run these after mak
 
 ## Personalizing the interface
 
-Begin in `src/` to locate the existing interface and visual styling. Review `tailwind.config.ts` before changing project-wide theme settings, and follow the conventions already used in the source rather than assuming particular theme tokens. The `scripts/` directory contains setup material for vision assets; keep those setup files and their asset paths in mind when editing or relocating them. The supplied file list does not name an image or font directory, so check existing references in the source before adding or moving assets. After appearance changes, verify both the visual feedback and the camera/model interaction.
+Begin in `src/` to locate the existing interface and visual styling. Review `tailwind.config.ts` before changing project-wide theme settings, and follow conventions already used in the source rather than assuming particular theme tokens. The `scripts/` directory contains setup material for vision assets; keep those setup files and their asset paths in mind when editing or relocating them. The supplied file list does not name an image or font directory, so check existing references in the source before adding or moving assets.
+
+## Manual review checklist
+
+These are actions to perform after a change, not verified results:
+
+- Open the app at the local URL. If testing hand tracking, allow camera access in a browser that supports the required camera APIs, then move a hand in view of the camera and observe the visual feedback.
+- Check the vision setup script under `scripts/` and the asset references it uses. Verify that required model or other media paths point to the expected files; if assets are absent, follow the documented setup instructions rather than assuming they are present.
+- Try the camera interaction after changes to the interface, setup material, or visual feedback. If it does not start, check browser camera permission and asset availability; do not treat this checklist as confirmation that either is working.
+- Inspect the interface at narrow mobile-sized and wide desktop-sized viewports. Check that the visual feedback and any visible controls remain in view and usable while the camera interaction is being reviewed.
+- If you changed appearance or theme settings, inspect the affected interface at both viewport sizes and compare it with the existing conventions in `src/` and `tailwind.config.ts`.
