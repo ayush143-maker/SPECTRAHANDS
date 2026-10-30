@@ -22,13 +22,19 @@ No hosting provider or deployment configuration is documented.
 
 ## Configuration and data handling
 
-The supplied root-file list includes `next.config.ts` but no `.env` file or `.env.example`. Review the existing Next.js configuration and source before adding settings; do not assume environment-variable names or backend services that this repository does not document. If you add an environment template, commit placeholders only and keep real secrets out of tracked files. Anything placed in browser-delivered code or otherwise exposed to the client must be treated as public, not as a secret; do not put credentials there.
+The supplied root-file list includes `next.config.ts` but no `.env` file or `.env.example`. Review the existing Next.js configuration and source before adding settings; do not assume environment-variable names or backend services that this repository does not document. If you add an environment template, commit placeholders only and keep real secrets out of tracked files. Anything placed in browser-delivered code or otherwise exposed to the client must be treated as public, not as a secret.
 
 Camera access is requested by the browser, and camera processing is described as intended to run in the browser. This README does not verify data flows or establish that camera data is never transmitted. Before relying on a privacy claim, inspect the implementation, model-loading requests, and network activity. Do not use real or sensitive data until the relevant handling has been reviewed.
 
-## Camera permissions and troubleshooting
+## Troubleshooting
 
-If vision assets are missing, run `npm run setup:vision` and review the setup script under `scripts/`. If hand tracking does not start, check browser camera permission and required asset availability. Camera access and model loading depend on the browser and available assets.
+Use these as diagnostic steps; they are not reports of known failures:
+
+1. Confirm the URL is the app route you intend to inspect. If the page does not appear, review the route and entry files under `src/` rather than assuming a particular route structure.
+2. If hand tracking does not initialize, check browser camera permission and whether the browser supports the required camera APIs. Review the browser Console for permission or runtime errors.
+3. Check that the required vision assets are available. The setup material is under `scripts/`; compare its paths with references in `src/`. The documented setup command is `npm run setup:vision`.
+4. Inspect the Network panel for failed requests and determine whether each model or other resource is loaded from a local asset or fetched over the network. Network-dependent resources require connectivity; do not treat their failures as missing local files without checking the references.
+5. Confirm local resource paths match files after any asset or script changes. No hosting provider or deployment configuration is documented, so diagnose any deployment-specific behavior in its actual context.
 
 ## Development checks
 
@@ -42,9 +48,7 @@ Begin in `src/` to locate the existing interface and visual styling. Review `tai
 
 These are checks to perform, not verified results:
 
-- Open the app at the local URL. If reviewing hand tracking, allow camera access and observe whether visual feedback responds.
 - Review the app in relevant browsers and narrow and wide viewports. Check camera interaction, visible controls, and layout; do not infer support from the app loading in one browser.
-- Inspect the browser console and network requests for errors, failed resources, model assets, and unexpected requests. Confirm required asset paths against the setup script and references in `src/`.
 - Use the keyboard to operate visible controls; review focus, accessible names, status messages, contrast, and whether the interaction has an understandable alternative for people who cannot use camera gestures.
 - If visual feedback moves or pulses, check reduced-motion behavior. Review what the interface communicates when camera access or a required asset is unavailable.
 - Review the size and continued use of vision assets before changing them. No asset sizes or loading measurements are reported here.
