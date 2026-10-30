@@ -20,4 +20,4 @@ If vision assets are missing, run `npm run setup:vision` and review the setup sc
 
 ## Development checks
 
-The package provides `npm run typecheck` and `npm run lint`. Run these after making changes, and keep camera access, model loading, and visual feedback responsive when changing the interaction.
+The package provides `npm run typecheck` and `npm run lint`. Run these after making changes, and keep camera access, model loading, and visual feedback working together when changing the interaction.
