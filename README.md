@@ -1,6 +1,6 @@
 # SPECTRAHANDS
 
-A real-time, browser-based hand-tracking light synthesizer built with Next.js and React. It uses MediaPipe Tasks Vision to interpret hand movement and drive a visual, colour-focused interaction; camera processing is intended to run in the browser.
+A browser-based hand-tracking light synthesizer built with Next.js and React. It uses MediaPipe Tasks Vision to interpret hand movement and drive a visual, colour-focused interaction; camera processing is intended to run in the browser. To try the vision interaction, allow camera access in a browser that supports the required camera APIs, then interact in view of the camera. The README does not describe additional on-screen controls.
 
 ## Run locally
 
@@ -19,7 +19,7 @@ Open the local URL printed by the server in your browser. For a production build
 
 ## Camera permissions
 
-Allow camera access in a browser that supports the required camera APIs. If vision assets are missing, run the setup command and review the script under `scripts/`.
+If vision assets are missing, run the setup command and review the script under `scripts/`. Camera access and model loading depend on the browser and available assets.
 
 ## Development checks
 
