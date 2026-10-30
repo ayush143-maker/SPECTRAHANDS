@@ -4,16 +4,16 @@ A real-time, browser-based hand-tracking light synthesizer built with Next.js an
 
 ## Run locally
 
-Install dependencies and start the Next.js development server:
+With Node.js and npm available, install dependencies and start the Next.js development server:
 
     npm install
     npm run dev
 
-Set up the MediaPipe assets with:
+Set up the MediaPipe assets before using the vision interaction:
 
     npm run setup:vision
 
-For a production build:
+Open the local URL printed by the server in your browser. For a production build, run:
 
     npm run build
 
