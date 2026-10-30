@@ -19,7 +19,7 @@ Open the local URL printed by the server in your browser. For a production build
 
 ## Camera permissions
 
-If vision assets are missing, run the setup command and review the script under `scripts/`. Camera access and model loading depend on the browser and available assets.
+If vision assets are missing, run the setup command and review the setup script under `scripts/`. Camera access and model loading depend on the browser and available assets.
 
 ## Development checks
 
