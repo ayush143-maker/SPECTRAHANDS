@@ -58,3 +58,9 @@ Before publishing, manually review the changed experience. The checklist above d
 - Check model and other resource requests in the Network panel, and confirm local asset paths still match after edits.
 
 If camera access is tested outside local development, check it in the actual deployment context: browser camera APIs can depend on permissions and a secure context.
+
+## Final release review
+
+- Confirm the documented starting point still matches the files present at the repository root.
+- Check the scripts and dependency versions in `package.json`; use the repository's declared workflow rather than assuming a generic build command.
+- Review the published result once on a narrow screen and once on a wider screen; treat this as a release check, not an automated test report.
