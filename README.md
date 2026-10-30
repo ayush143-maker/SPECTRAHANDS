@@ -14,9 +14,11 @@ Open the local URL printed by the server in your browser. Allow camera access to
 
     npm run build
 
-## Camera permissions
+No hosting provider or deployment configuration is documented.
 
-If vision assets are missing, run `npm run setup:vision` and review the setup script under `scripts/`. Camera access and model loading depend on the browser and available assets.
+## Camera permissions and troubleshooting
+
+If vision assets are missing, run `npm run setup:vision` and review the setup script under `scripts/`. If hand tracking does not start, check that camera access is allowed in the browser and that the required assets are available. Camera access and model loading depend on the browser and available assets.
 
 ## Development checks
 
